@@ -23,7 +23,7 @@ os.system('clear')
 #CARGO EL SERVICE_NAME, EL API_VERSION Y EL DEVELOPER_KEY
 YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
-DEVELOPER_KEY = 'AIzaSyBwcT0V1mBngVwVxl4F-Gr8it3ltwYLc6M' ###INGRESA DEVELOPER_KEY
+DEVELOPER_KEY = '' ###INGRESA DEVELOPER_KEY
 api = Api(api_key=DEVELOPER_KEY)
 
 
@@ -126,7 +126,7 @@ def video_info(df_list_playlist_item):
                        'commentCount':int(commentCount) if commentCount != None else int(0),
                         'videoID':videoID,
                         'Edicion':edicion
-                      })
+                      }) 
       time.sleep(0.5)
   df_info = pd.DataFrame(list_info)
   df_info = df_info[['Fecha_Publicación','Titulo','viewCount','likeCount', 'dislikeCount',
