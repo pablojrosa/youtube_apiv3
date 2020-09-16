@@ -23,7 +23,7 @@ os.system('clear')
 #CARGO EL SERVICE_NAME, EL API_VERSION Y EL DEVELOPER_KEY
 YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
-DEVELOPER_KEY = '' ###INGRESA DEVELOPER_KEY
+DEVELOPER_KEY = 'AIzaSyBwcT0V1mBngVwVxl4F-Gr8it3ltwYLc6M' ###INGRESA DEVELOPER_KEY
 api = Api(api_key=DEVELOPER_KEY)
 
 
@@ -61,7 +61,7 @@ def playlist_ids(channel_id):
 def playlist_item(df_list_playlist_id):
   list_playlist_item = []
   ###CON EL PLAYLIST_ID HAGO EL GET_PLAYLIST_ITEMS Y EXTRAIGO TODOS LOS VIDEOS_ID (Y MAS INFO)
-  for pl in progressbar.progressbar(range(len(df_list_playlist_id.head(3)))):
+  for pl in progressbar.progressbar(range(len(df_list_playlist_id))):
       play_list_id = df_list_playlist_id.loc[pl,'playlist_id']
       edicion = df_list_playlist_id.loc[pl,'playlist_title']
       page_token = None
@@ -98,7 +98,7 @@ def video_info(df_list_playlist_item):
   ### Eliminar los registros que no contengan la palabra TEDxRíodelaPlata ya que no son relevantes
 
   list_info = []
-  for v in progressbar.progressbar(range(len(df_list_playlist_item.head(3)))):
+  for v in progressbar.progressbar(range(len(df_list_playlist_item))):
       videoID = df_list_playlist_item.loc[v,'videoId']
       edicion = df_list_playlist_item.loc[v,'Edición']
       
@@ -195,6 +195,3 @@ def menu():
 
 if __name__ == '__main__':
     menu()
-
-#channel_name = 'TEDxRiodelaPlata' ###INGRESAR EL NOMBRE DEL CANAL
-#channel_id = api.get_channel_info(channel_name=channel_name).to_dict().get('items')[0].get('id')###EXTRAIGO EL CHANNEL_ID
