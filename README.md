@@ -7,7 +7,7 @@
 - viewCount: views totales del video
 - likeCount: likes totales del video
 - dislikeCount: 
-- -commentCount
+- commentCount
 - Duración_segs
 - Tags
 - Descripcion
