@@ -41,7 +41,7 @@ def playlist_ids(channel_id):
   while 1:
       playlists_id = api.get_playlists(channel_id = channel_id , limit=50, page_token=page_token).to_dict()
       
-      for i in range(len(playlists_id.get('items'))):
+      for i in range(len(playlists_id.get('items').head(3))):
           playlist_id = playlists_id.get('items')[i].get('id')
           playlist_title = playlists_id.get('items')[i].get('snippet').get('title')
 
@@ -68,7 +68,7 @@ def playlist_item(df_list_playlist_id):
       
       while 1:
           playlist_item = api.get_playlist_items(playlist_id=play_list_id,limit=50, page_token=page_token).to_dict()
-          for y in range(len(playlist_item.get('items'))):
+          for y in range(len(playlist_item.get('items').head(3))):
               if playlist_item.get('items')[y].get('status').get('privacyStatus') != 'private':
 
                   title = playlist_item.get('items')[y].get('snippet').get('title')
@@ -135,12 +135,70 @@ def video_info(df_list_playlist_item):
 
   return df_info
 
-def save(df_info):
+def word_cloud(lista):
+    #1. Genero el corpus ( la lista de listas de texto) 
+    corpus = []
+    for tag in range(len(df_test)):
+        if df_test.loc[tag,'Tags'] !='':
+            corpus.append(nltk.word_tokenize(df_test.loc[tag,'Tags'].replace('[','').replace(']','').replace("""'""",'')))
+
+    flatten = [w for l in corpus for w in l]
+
+
+    # 2. Preparo el texto para tokenizarlo
+    text = ""
+    for item in flatten:
+        text += item + str(' ')
+
+    #3. Tokenizo por palabras con el pattern de a continuacion
+    pattern = r'''(?x)                  # Flag para iniciar el modo verbose
+                  (?:[A-Z]\.)+            # Hace match con abreviaciones como U.S.A.
+                  | \w+(?:-\w+)*         # Hace match con palabras que pueden tener un guión interno
+                  | \$?\d+(?:\.\d+)?%?  #Hace match con dinero o porcentajes como $15.5 o 100%
+                  | \.\.\.              # Hace match con puntos suspensivos
+                  | [][.,;"'?():-_`]    # Hace match con signos de puntuación '''
+
+    word_token = nltk.regexp_tokenize(text, pattern= pattern)
+    #Saco signos de puntuación
+    
+    word_token_clear = []
+    for palabra in word_token:
+        if len(palabra)>2:
+            word_token_clear.append(palabra)
+
+    dist = FreqDist(word_token_clear)
+    importantes = pd.DataFrame(dist.most_common(40), columns=['word','freq'])
+
+    #7. Transformo el array en un diccionario para graficarlo
+    count = 0
+    for i in range(len(importantes)):
+        if count == 0:
+            important = {importantes.iloc[i]['word']: int(importantes.iloc[i]['freq'])}
+
+        else:
+            important1 = {importantes.iloc[i]['word']: int(importantes.iloc[i]['freq'])}
+
+            important.update(important1)
+
+        count = count + 1
+
+    #8. Genero la wordcloud
+
+    wc = WordCloud(width=430, height=250,background_color="white").generate_from_frequencies(important)
+    return wc
+
+def save(df_info, tags):
   file_name = input(str('Por favor ingrese el nombre con que desee guardar el archivo: ')).upper()
   df_info.to_csv(str(file_name)+'.csv')
 
   print('Guardado exitosamente')
 
+  wc = word_cloud(tags)
+  plt.figure(figsize=(30,30))
+  plt.title(label= file_name , fontsize=40)
+  plt.imshow(wc, interpolation="bilinear")
+  plt.axis("off")
+  plt.savefig('./WordCloud/'+file_name+'.jpg')
 
 def menu():
     while True:
@@ -149,17 +207,22 @@ def menu():
           entrada_usuario = int(input("Seleccione una opcion: "))
           if entrada_usuario in range(3):
             if entrada_usuario == 1:
+              channel_name = str(input("Ingrese el nombre del canal: "))
+              channel_id = api.get_channel_info(channel_name=channel_name).to_dict().get('items')[0].get('id')###EXTRAIGO EL CHANNEL_ID
+              df_playlist_ids =playlist_ids(channel_id)
+              print(df_playlist_ids)
               try:
-                channel_name = str(input("Ingrese el nombre del canal: "))
-                channel_id = api.get_channel_info(channel_name=channel_name).to_dict().get('items')[0].get('id')###EXTRAIGO EL CHANNEL_ID
-
-                df_playlist_ids =playlist_ids(channel_id)
-
                 df_playlist_item = playlist_item(df_playlist_ids)
 
-                df_video_info = video_info(df_playlist_item)
+                df_video_info = video_info(df_playlist_item).fillna()
 
-                save(df_video_info)
+                df_tags = df_video_info[df_video_info['Tags']!='']
+
+                tags = []
+                for i in range(len(df_tags)):
+                    tags.append(df_tags.loc[i,'Tags'])
+
+                save(df_video_info, tags)
 
               except:
                 print('Error')
@@ -177,6 +240,12 @@ def menu():
 
                 save(df_video_info)
 
+                tags = []
+                for i in range(len(df_tags)):
+                    tags.append(df_tags.loc[i,'Tags'])
+
+                save(df_video_info, tags)
+
               except:
                 print('Error')
                 break
@@ -190,8 +259,11 @@ def menu():
             print('Valor ingresado no correcto')
             break
         except:
-                print('error')
+                print('Error')
 
 
 if __name__ == '__main__':
     menu()
+
+#channel_name = 'TEDxRiodelaPlata' ###INGRESAR EL NOMBRE DEL CANAL
+#channel_id = api.get_channel_info(channel_name=channel_name).to_dict().get('items')[0].get('id')###EXTRAIGO EL CHANNEL_ID

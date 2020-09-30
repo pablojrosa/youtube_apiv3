@@ -1,4 +1,3 @@
-#CARGO LAS LIBRERIAS QUE VOY A NECESITAR 
 from apiclient.errors import HttpError
 from oauth2client.tools import argparser
 from apiclient.discovery import build
@@ -11,37 +10,13 @@ import os
 from datetime import datetime
 import isodate
 
-
-#NLP
-import nltk
-from nltk import word_tokenize, FreqDist
-from wordcloud import WordCloud
-import matplotlib.pyplot as plt
-
-os.system('clear')
-
-#CARGO EL SERVICE_NAME, EL API_VERSION Y EL DEVELOPER_KEY
-YOUTUBE_API_SERVICE_NAME = "youtube"
-YOUTUBE_API_VERSION = "v3"
-DEVELOPER_KEY = 'AIzaSyBwcT0V1mBngVwVxl4F-Gr8it3ltwYLc6M' ###INGRESA DEVELOPER_KEY
-api = Api(api_key=DEVELOPER_KEY)
-
-
-def imprimir():
-    print("\n\x1b[0;36mOpciones disponibles:\x1b[0;37m")
-    print("\t1. Ingrese el nombre del canal -como se encuentra en el buscador-")
-    print("\t2. Ingrese el id del canal - se encuentra en la linea de arriba del buscador-")
-    print("\t0. Salir")
-    print()
-
-
 def playlist_ids(channel_id):
   list_playlist_id = []
   page_token = None
   while 1:
       playlists_id = api.get_playlists(channel_id = channel_id , limit=50, page_token=page_token).to_dict()
       
-      for i in range(len(playlists_id.get('items'))):
+      for i in range(len(playlists_id.get('items').head(3))):
           playlist_id = playlists_id.get('items')[i].get('id')
           playlist_title = playlists_id.get('items')[i].get('snippet').get('title')
 
@@ -68,7 +43,7 @@ def playlist_item(df_list_playlist_id):
       
       while 1:
           playlist_item = api.get_playlist_items(playlist_id=play_list_id,limit=50, page_token=page_token).to_dict()
-          for y in range(len(playlist_item.get('items'))):
+          for y in range(len(playlist_item.get('items').head(3))):
               if playlist_item.get('items')[y].get('status').get('privacyStatus') != 'private':
 
                   title = playlist_item.get('items')[y].get('snippet').get('title')
@@ -135,63 +110,3 @@ def video_info(df_list_playlist_item):
 
   return df_info
 
-def save(df_info):
-  file_name = input(str('Por favor ingrese el nombre con que desee guardar el archivo: ')).upper()
-  df_info.to_csv(str(file_name)+'.csv')
-
-  print('Guardado exitosamente')
-
-
-def menu():
-    while True:
-        imprimir()
-        try:
-          entrada_usuario = int(input("Seleccione una opcion: "))
-          if entrada_usuario in range(3):
-            if entrada_usuario == 1:
-              try:
-                channel_name = str(input("Ingrese el nombre del canal: "))
-                channel_id = api.get_channel_info(channel_name=channel_name).to_dict().get('items')[0].get('id')###EXTRAIGO EL CHANNEL_ID
-
-                df_playlist_ids =playlist_ids(channel_id)
-
-                df_playlist_item = playlist_item(df_playlist_ids)
-
-                df_video_info = video_info(df_playlist_item)
-
-                save(df_video_info)
-
-              except:
-                print('Error')
-                break
-
-            elif entrada_usuario == 2:
-              try:
-                channel_id = str(input("Ingrese el id del canal: "))
-
-                df_playlist_ids =playlist_ids(channel_id)
-
-                df_playlist_item = playlist_item(df_playlist_ids)
-
-                df_video_info = video_info(df_playlist_item)
-
-                save(df_video_info)
-
-              except:
-                print('Error')
-                break
-
-            else:
-              cadena = "Finalizo el programa"
-              print("\x1b[1;31m"+cadena.center(100, "_")+"\x1b[0;37m\n")
-              break 
-
-          else:
-            print('Valor ingresado no correcto')
-            break
-        except:
-                print('error')
-
-
-if __name__ == '__main__':
-    menu()
