@@ -26,4 +26,7 @@
   - Fecha de creación de la playlist
 
 ### NO OLVIDES COLOCAR TUS CREDENCIALES DE GOOGLE
-Puedes consultar como realizarla en haciendo click aquí[https://developers.google.com/youtube/v3/getting-started]
+Puedes consultar como realizarla yendo al [getting-started] de google
+
+[//]:#
+[getting-started]: <https://developers.google.com/youtube/v3/getting-started>
