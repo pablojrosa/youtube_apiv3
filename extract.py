@@ -1,16 +1,20 @@
-from apiclient.errors import HttpError
-from oauth2client.tools import argparser
-from apiclient.discovery import build
+import logging
+from urllib.parse import urlparse
 import json
 import pandas as pd
 from pyyoutube import Api
 import progressbar
 import time
-import os
 from datetime import datetime
 import isodate
 
-def playlist_ids(channel_id):
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def main(channel_id):
+
+  logger.info('Extraigo la info del canal')
+  def playlist_ids(channel_id):
   list_playlist_id = []
   page_token = None
   while 1:
@@ -26,14 +30,14 @@ def playlist_ids(channel_id):
       page_token = playlists_id.get('nextPageToken')
       if playlists_id.get('nextPageToken')== None:
           break
-      
+    
   df_list_playlist_id = pd.DataFrame(list_playlist_id)
   df_list_playlist_id = df_list_playlist_id[['playlist_title' , 'playlist_id']]
 
   return df_list_playlist_id
-
-
-def playlist_item(df_list_playlist_id):
+    
+  logger.info('extraigo la info de las playlist')
+  def playlist_item(df_list_playlist_id):
   list_playlist_item = []
   ###CON EL PLAYLIST_ID HAGO EL GET_PLAYLIST_ITEMS Y EXTRAIGO TODOS LOS VIDEOS_ID (Y MAS INFO)
   for pl in progressbar.progressbar(range(len(df_list_playlist_id))):
@@ -61,52 +65,55 @@ def playlist_item(df_list_playlist_id):
           page_token = playlist_item.get('nextPageToken')
           if playlist_item.get('nextPageToken')== None:
               break
-  df_list_playlist_item = pd.DataFrame(list_playlist_item)
-  df_list_playlist_item = df_list_playlist_item[['Titulo','Fecha_publicacion','Descripcion','videoId','Edición']]
-  df_list_playlist_item = df_list_playlist_item[df_list_playlist_item['Titulo']!='Private video'].reset_index(drop=True)
+    df_list_playlist_item = pd.DataFrame(list_playlist_item)
+    df_list_playlist_item = df_list_playlist_item[['Titulo','Fecha_publicacion','Descripcion','videoId','Edición']]
+    df_list_playlist_item = df_list_playlist_item[df_list_playlist_item['Titulo']!='Private video'].reset_index(drop=True)
 
-  return df_list_playlist_item
+    return df_list_playlist_item
 
 
-def video_info(df_list_playlist_item):
-  ###CON EL VIDEO_ID HAGO EL GET_VIDEO_BY_ID Y EXTRAIGO TODA LA INFO QUE NECESITO DEL VIDEO
-  ### Eliminar los registros que no contengan la palabra TEDxRíodelaPlata ya que no son relevantes
+  
+  logger.info('extraigo la info de las playlist')
+  def video_info(df_list_playlist_item):
+    list_info = []
+    for v in progressbar.progressbar(range(len(df_list_playlist_item))):
+        videoID = df_list_playlist_item.loc[v,'videoId']
+        edicion = df_list_playlist_item.loc[v,'Edición']
+        
+        titulo = df_list_playlist_item.loc[v,'Titulo']
+        descripcion = df_list_playlist_item.loc[v,'Descripcion']
+        
+        video_info = api.get_video_by_id(video_id=videoID).to_dict()
+        
+        fecha = df_list_playlist_item.loc[v,'Fecha_publicacion']
+        duracion = video_info.get('items')[0].get('contentDetails').get('duration')
+        tags = video_info.get('items')[0].get('snippet').get('tags')
+        viewCount = video_info.get('items')[0].get('statistics').get('viewCount')
+        likeCount = video_info.get('items')[0].get('statistics').get('likeCount')
+        dislikeCount = video_info.get('items')[0].get('statistics').get('dislikeCount')
+        commentCount = video_info.get('items')[0].get('statistics').get('commentCount')
+        
+        list_info.append({'Fecha_Publicación':fecha, 
+                        'Titulo':titulo,
+                        'Descripcion':descripcion,
+                        'Duración_segs':int(isodate.parse_duration(duracion).total_seconds()),
+                        'Tags':tags,
+                        'viewCount':int(viewCount) if viewCount != None else int(0),
+                        'likeCount':int(likeCount) if likeCount != None else int(0),
+                        'dislikeCount':int(dislikeCount) if dislikeCount != None else int(0),
+                        'commentCount':int(commentCount) if commentCount != None else int(0),
+                          'videoID':videoID,
+                          'Edicion':edicion
+                        }) 
+        time.sleep(0.5)
+    df_info = pd.DataFrame(list_info)
+    df_info = df_info[['Fecha_Publicación','Titulo','viewCount','likeCount', 'dislikeCount',
+                      'commentCount','Duración_segs','Tags','Descripcion','videoID', 'Edicion']]
+    df_info = df_info.drop_duplicates(subset=['Titulo'],keep='first').reset_index(drop=True)
 
-  list_info = []
-  for v in progressbar.progressbar(range(len(df_list_playlist_item))):
-      videoID = df_list_playlist_item.loc[v,'videoId']
-      edicion = df_list_playlist_item.loc[v,'Edición']
-      
-      titulo = df_list_playlist_item.loc[v,'Titulo']
-      descripcion = df_list_playlist_item.loc[v,'Descripcion']
-      
-      video_info = api.get_video_by_id(video_id=videoID).to_dict()
-      
-      fecha = df_list_playlist_item.loc[v,'Fecha_publicacion']
-      duracion = video_info.get('items')[0].get('contentDetails').get('duration')
-      tags = video_info.get('items')[0].get('snippet').get('tags')
-      viewCount = video_info.get('items')[0].get('statistics').get('viewCount')
-      likeCount = video_info.get('items')[0].get('statistics').get('likeCount')
-      dislikeCount = video_info.get('items')[0].get('statistics').get('dislikeCount')
-      commentCount = video_info.get('items')[0].get('statistics').get('commentCount')
-       
-      list_info.append({'Fecha_Publicación':fecha, 
-                      'Titulo':titulo,
-                      'Descripcion':descripcion,
-                      'Duración_segs':int(isodate.parse_duration(duracion).total_seconds()),
-                       'Tags':tags,
-                       'viewCount':int(viewCount) if viewCount != None else int(0),
-                       'likeCount':int(likeCount) if likeCount != None else int(0),
-                       'dislikeCount':int(dislikeCount) if dislikeCount != None else int(0),
-                       'commentCount':int(commentCount) if commentCount != None else int(0),
-                        'videoID':videoID,
-                        'Edicion':edicion
-                      }) 
-      time.sleep(0.5)
-  df_info = pd.DataFrame(list_info)
-  df_info = df_info[['Fecha_Publicación','Titulo','viewCount','likeCount', 'dislikeCount',
-                     'commentCount','Duración_segs','Tags','Descripcion','videoID', 'Edicion']]
-  df_info = df_info.drop_duplicates(subset=['Titulo'],keep='first').reset_index(drop=True)
+    return df_info
+    
+if __name__ == '__main__':
 
-  return df_info
 
+    df = main(channel_id)

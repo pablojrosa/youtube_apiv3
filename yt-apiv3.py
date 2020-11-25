@@ -145,52 +145,51 @@ def save(df_info):
 def menu():
     while True:
         imprimir()
-        try:
-          entrada_usuario = int(input("Seleccione una opcion: "))
-          if entrada_usuario in range(3):
-            if entrada_usuario == 1:
-              try:
-                channel_name = str(input("Ingrese el nombre del canal: "))
-                channel_id = api.get_channel_info(channel_name=channel_name).to_dict().get('items')[0].get('id')###EXTRAIGO EL CHANNEL_ID
+        entrada_usuario = int(input("Seleccione una opcion: "))
+        if entrada_usuario in range(3):
+          if entrada_usuario == 1:
+            try:
+              channel_name = str(input("Ingrese el nombre del canal: "))
+              
+              channel_id = api.get_channel_info(channel_name=channel_name).to_dict().get('items')[0].get('id')###EXTRAIGO EL CHANNEL_ID
+              
 
-                df_playlist_ids =playlist_ids(channel_id)
+              df_playlist_ids =playlist_ids(channel_id)
 
-                df_playlist_item = playlist_item(df_playlist_ids)
+              df_playlist_item = playlist_item(df_playlist_ids)
 
-                df_video_info = video_info(df_playlist_item)
+              df_video_info = video_info(df_playlist_item)
 
-                save(df_video_info)
+              save(df_video_info)
 
-              except:
-                print('Error')
-                break
+            except Exception as e:
+              print('Error', e)
+              break
 
-            elif entrada_usuario == 2:
-              try:
-                channel_id = str(input("Ingrese el id del canal: "))
+          elif entrada_usuario == 2:
+            try:
+              channel_id = str(input("Ingrese el id del canal: "))
 
-                df_playlist_ids =playlist_ids(channel_id)
+              df_playlist_ids =playlist_ids(channel_id)
 
-                df_playlist_item = playlist_item(df_playlist_ids)
+              df_playlist_item = playlist_item(df_playlist_ids)
 
-                df_video_info = video_info(df_playlist_item)
+              df_video_info = video_info(df_playlist_item)
 
-                save(df_video_info)
+              save(df_video_info)
 
-              except:
-                print('Error')
-                break
-
-            else:
-              cadena = "Finalizo el programa"
-              print("\x1b[1;31m"+cadena.center(100, "_")+"\x1b[0;37m\n")
-              break 
+            except Exception as e:
+              print('Error', e)
+              break
 
           else:
-            print('Valor ingresado no correcto')
-            break
-        except:
-                print('error')
+            cadena = "Finalizo el programa"
+            print("\x1b[1;31m"+cadena.center(100, "_")+"\x1b[0;37m\n")
+            break 
+
+        else:
+          print('Valor ingresado no correcto')
+          break
 
 
 if __name__ == '__main__':
